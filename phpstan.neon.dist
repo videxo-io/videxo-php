@@ -1,0 +1,9 @@
+parameters:
+  level: max
+  paths:
+    - src
+    - tests
+  excludePaths:
+    - tests/types
+  tmpDir: .phpstan.cache
+  phpVersion: 80200
