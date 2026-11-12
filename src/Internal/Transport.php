@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Videxo\Internal;
 
+use GuzzleHttp\Client as GuzzleClient;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
@@ -16,6 +17,7 @@ use Videxo\Credentials;
 use Videxo\Exception\ApiException;
 use Videxo\Exception\ConnectionException;
 use Videxo\Exception\UnexpectedResponseException;
+use Videxo\TimeoutClientInterface;
 
 /**
  * One request with its retries: backoff with jitter after 429, 502, 503, 504 and a network error or
@@ -86,9 +88,9 @@ final class Transport
      * @param 'safe'|'rate_limit'|'never' $retry
      * @return array<string, mixed>
      */
-    public function json(RequestInterface $request, string $retry): array
+    public function json(RequestInterface $request, string $retry, ?float $deadline = null): array
     {
-        $response = $this->send($request, $retry);
+        $response = $this->send($request, $retry, $deadline);
         $text = (string) $response->getBody();
         $status = $response->getStatusCode();
         if ($status >= 400) {
@@ -115,23 +117,26 @@ final class Transport
      *
      * @param 'safe'|'rate_limit'|'never' $retry
      */
-    public function send(RequestInterface $request, string $retry): ResponseInterface
+    public function send(RequestInterface $request, string $retry, ?float $deadline = null): ResponseInterface
     {
         $maxRetries = $retry === 'never' ? 0 : $this->maxRetries;
         for ($attempt = 0; ; $attempt++) {
+            $this->remaining($deadline);
             $last = $attempt >= $maxRetries;
             $body = $request->getBody();
             if ($attempt > 0 && $body->isSeekable()) {
                 $body->rewind();
             }
             try {
-                $response = $this->http->sendRequest($request);
+                $response = $this->attempt($request, $deadline);
+                $this->remaining($deadline);
             } catch (ClientExceptionInterface $error) {
+                $this->remaining($deadline);
                 $failure = $this->connectionError($request, $error);
-                if ($last || $retry !== 'safe' || !$error instanceof NetworkExceptionInterface || ($attempt > 0 && !$body->isSeekable())) {
+                if ($last || $retry !== 'safe' || !$error instanceof NetworkExceptionInterface || !$body->isSeekable()) {
                     throw $failure;
                 }
-                $this->clock->sleep($this->backoff($attempt));
+                $this->pause($this->backoff($attempt), $deadline);
                 continue;
             }
             $status = $response->getStatusCode();
@@ -143,8 +148,50 @@ final class Transport
             if ($retryAfter !== null && $retryAfter > self::MAX_RETRY_AFTER_SECONDS) {
                 return $response;
             }
-            $this->clock->sleep($retryAfter ?? $this->backoff($attempt));
+            $this->pause($retryAfter ?? $this->backoff($attempt), $deadline);
         }
+    }
+
+    private function remaining(?float $deadline): ?float
+    {
+        if ($deadline === null) {
+            return null;
+        }
+        $left = $deadline - $this->clock->now();
+        if ($left <= 0) {
+            throw new DeadlineExceeded();
+        }
+        return $left;
+    }
+
+    private function pause(float $seconds, ?float $deadline): void
+    {
+        $left = $this->remaining($deadline);
+        $this->clock->sleep($left === null ? $seconds : min($seconds, $left));
+        $this->remaining($deadline);
+    }
+
+    private function attempt(RequestInterface $request, ?float $deadline): ResponseInterface
+    {
+        $left = $this->remaining($deadline);
+        if ($left !== null && $this->http instanceof TimeoutClientInterface) {
+            return $this->http->sendRequestWithTimeout($request, $left);
+        }
+        if ($left !== null && $this->http instanceof GuzzleClient) {
+            // sendRequest() has no options. Keep its PSR-18 redirect/status semantics when using send().
+            $configured = $this->http->getConfig('timeout');
+            $timeout = is_int($configured) || is_float($configured) ? $configured : 0;
+            $configuredConnect = $this->http->getConfig('connect_timeout');
+            $connectTimeout = is_int($configuredConnect) || is_float($configuredConnect) ? $configuredConnect : 0;
+            return $this->http->send($request, [
+                'timeout' => $timeout > 0 ? min($timeout, $left) : $left,
+                'connect_timeout' => $connectTimeout > 0 ? min($connectTimeout, $left) : $left,
+                'allow_redirects' => false,
+                'http_errors' => false,
+            ]);
+        }
+        // A plain PSR-18 client cannot be interrupted; check its result against the deadline above.
+        return $this->http->sendRequest($request);
     }
 
     /** The wait before retry `$attempt` (0-based) without a Retry-After: 0.5 s doubling to 8 s, with jitter. */

@@ -9,17 +9,31 @@ namespace Videxo\Model;
 use Videxo\Internal\Read;
 
 /**
- * A one-time upload URL and the input URL a job takes once the bytes arrived.
+ * An upload URL and the input URL a job takes once the bytes arrived.
  */
 final readonly class Upload implements \JsonSerializable
 {
+    /**
+     * @param array<string, mixed>|null $multipart
+     */
     public function __construct(
         public string $id,
         public string $inputUrl,
+        /**
+         * A single upload: PUT the file here. A multipart upload: GET its received parts here, or
+         * DELETE to abort it.
+         */
         public string $uploadUrl,
+        /**
+         * One hour for a single upload, 6 hours for a multipart one.
+         */
         public \DateTimeImmutable $uploadUrlExpiresAt,
         public \DateTimeImmutable $expiresAt,
         public int $maxSizeBytes,
+        /**
+         * Only on a multipart upload.
+         */
+        public ?array $multipart = null,
     ) {
     }
 
@@ -38,6 +52,7 @@ final readonly class Upload implements \JsonSerializable
             uploadUrlExpiresAt: Read::dateTime($data, 'upload_url_expires_at'),
             expiresAt: Read::dateTime($data, 'expires_at'),
             maxSizeBytes: Read::int($data, 'max_size_bytes'),
+            multipart: array_key_exists('multipart', $data) ? Read::nullableObject($data, 'multipart') : null,
         );
     }
 
@@ -55,6 +70,7 @@ final readonly class Upload implements \JsonSerializable
             'upload_url_expires_at' => Read::format($this->uploadUrlExpiresAt),
             'expires_at' => Read::format($this->expiresAt),
             'max_size_bytes' => $this->maxSizeBytes,
+            ...($this->multipart === null ? [] : ['multipart' => $this->multipart]),
         ];
     }
 }

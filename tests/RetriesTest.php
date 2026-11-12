@@ -5,8 +5,17 @@ declare(strict_types=1);
 namespace Videxo\Tests;
 
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\Psr7\NoSeekStream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Utils;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Videxo\ApiKey;
+use Videxo\Internal\Transport;
 use Videxo\Exception\ConnectionException;
 use Videxo\Exception\RateLimitedException;
 use Videxo\Exception\ServiceUnavailableException;
@@ -146,5 +155,47 @@ final class RetriesTest extends TestCase
         } catch (\Videxo\Exception\ApiException) {
         }
         self::assertCount(1, $this->api->requests);
+    }
+    /** @return iterable<string, array{bool}> */
+    public static function replayability(): iterable
+    {
+        yield 'nonseekable' => [false];
+        yield 'seekable' => [true];
+    }
+
+    #[DataProvider('replayability')]
+    public function testANetworkFailureAfterConsumingJsonOnlyRetriesAReplayableBody(bool $seekable): void
+    {
+        $json = '{"input":"https://example.com/talk.mp4","preset":"web-720p"}';
+        $http = new class implements ClientInterface {
+            /** @var list<string> */
+            public array $bodies = [];
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $this->bodies[] = $request->getBody()->getContents();
+                if (count($this->bodies) === 1) {
+                    throw new ConnectException('Connection reset after sending the body.', $request);
+                }
+                return new Response(200);
+            }
+        };
+        $factory = new HttpFactory();
+        $transport = new Transport($http, $factory, $factory, FakeApi::BASE_URL, new ApiKey(FakeApi::KEY), 2, $this->clock, 'videxo-test');
+        $stream = Utils::streamFor($json);
+        $request = new Request('POST', FakeApi::BASE_URL . '/v1/jobs', ['Idempotency-Key' => 'same-job'], $seekable ? $stream : new NoSeekStream($stream));
+        if ($seekable) {
+            self::assertSame(200, $transport->send($request, 'safe')->getStatusCode());
+            self::assertSame([$json, $json], $http->bodies);
+            self::assertCount(1, $this->clock->sleeps);
+        } else {
+            try {
+                $transport->send($request, 'safe');
+                self::fail('A consumed nonseekable body was sent again: ' . json_encode($http->bodies));
+            } catch (ConnectionException) {
+                self::assertSame([$json], $http->bodies);
+                self::assertSame([], $this->clock->sleeps);
+            }
+        }
     }
 }

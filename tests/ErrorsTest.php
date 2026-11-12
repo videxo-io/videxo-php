@@ -21,7 +21,7 @@ final class ErrorsTest extends TestCase
         $classes = (new \ReflectionClassConstant(ApiException::class, 'CLASSES'))->getValue();
         self::assertIsArray($classes);
         $codes = array_keys($this->api->fixture('problems'));
-        self::assertEqualsCanonicalizing($codes, array_keys($classes), 'a new error code of the API needs its exception class');
+        self::assertSame([], array_values(array_diff($codes, array_keys($classes))), 'a new error code of the API needs its exception class');
         foreach ($codes as $code) {
             $problem = $this->api->fixture("problems.{$code}");
             $error = ApiException::fromResponse($this->api->problem($code), (string) json_encode($problem));
@@ -38,6 +38,15 @@ final class ErrorsTest extends TestCase
             self::assertSame($problem['reason'] ?? null, $error->reason);
             self::assertSame($problem, $error->body);
         }
+    }
+
+    public function testKeepsTheLegacyUsageCapException(): void
+    {
+        $problem = $this->api->fixture('problems.limit_exceeded');
+        $problem['code'] = 'usage_cap_reached';
+        $response = FakeApi::json(402, $problem);
+        $error = ApiException::fromResponse($response, (string) $response->getBody());
+        self::assertInstanceOf(\Videxo\Exception\UsageCapReachedException::class, $error);
     }
 
     public function testThrowsTheProblemOfACall(): void

@@ -105,4 +105,36 @@ final class ModelsTest extends TestCase
         $fixture['progress'] = 1;
         self::assertSame(1.0, Job::fromArray($fixture)->progress);
     }
+    public function testReadsStoredResponsesFromBeforeTheAdditionalFields(): void
+    {
+        $fixture = $this->api->fixture('jobs.failed');
+        unset($fixture['steps'], $fixture['notices'], $fixture['ai']);
+        self::assertIsArray($fixture['error']);
+        unset($fixture['error']['retryable'], $fixture['error']['log_tail']);
+        self::assertIsArray($fixture['usage']);
+        unset($fixture['usage']['bill'], $fixture['usage']['ai']);
+        $job = Job::fromArray($fixture);
+        self::assertSame([], $job->steps);
+        self::assertSame([], $job->notices);
+        self::assertNull($job->ai);
+        self::assertFalse($job->error?->retryable);
+        self::assertNull($job->usage?->bill);
+        self::assertNull($job->usage?->ai);
+
+        // The original positional constructor still accepts its original arguments.
+        $old = new Job($job->id, $job->state, $job->kind, $job->operation, $job->spec, $job->command,
+            $job->inputFiles, $job->outputFiles, $job->ffmpegCommand, $job->webhookUrl, $job->metadata,
+            $job->progress, $job->error, $job->outputs, $job->usage, $job->createdAt, $job->startedAt, $job->finishedAt);
+        self::assertSame([], $old->steps);
+        self::assertSame($job->createdAt, $old->createdAt);
+    }
+
+    public function testReadsFractionalCreditUsage(): void
+    {
+        $fixture = $this->api->fixture('jobs.succeeded');
+        self::assertIsArray($fixture['usage']);
+        $fixture['usage']['credits'] = 44.6;
+        self::assertSame(44.6, Job::fromArray($fixture)->usage?->credits);
+    }
+
 }

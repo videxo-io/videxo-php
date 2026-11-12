@@ -16,8 +16,8 @@ final readonly class JobError implements \JsonSerializable
     public function __construct(
         /**
          * The stable error code (the Errors page lists each one). Known values: `limit_exceeded`,
-         * `usage_cap_reached`, `out_of_credits`, `service_unavailable`, `internal_error`,
-         * `input_unreachable`, `processing_failed`.
+         * `out_of_credits`, `service_unavailable`, `internal_error`, `input_unreachable`,
+         * `processing_failed`.
          */
         public string $code,
         /**
@@ -31,12 +31,12 @@ final readonly class JobError implements \JsonSerializable
         /**
          * Whether creating the same job again can succeed without a change.
          */
-        public bool $retryable,
+        public bool $retryable = false,
         /**
          * With `processing_failed` `ffmpeg_error`: ffmpeg's last lines about the media, once
          * available; null otherwise.
          */
-        public ?string $logTail,
+        public ?string $logTail = null,
     ) {
     }
 
@@ -52,8 +52,8 @@ final readonly class JobError implements \JsonSerializable
             code: Read::string($data, 'code'),
             reason: Read::nullableString($data, 'reason'),
             message: Read::string($data, 'message'),
-            retryable: Read::bool($data, 'retryable'),
-            logTail: Read::nullableString($data, 'log_tail'),
+            retryable: array_key_exists('retryable', $data) ? Read::bool($data, 'retryable') : false,
+            logTail: array_key_exists('log_tail', $data) ? Read::nullableString($data, 'log_tail') : null,
         );
     }
 

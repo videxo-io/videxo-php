@@ -23,7 +23,8 @@ final readonly class Preset implements \JsonSerializable
     public function __construct(
         public string $name,
         /**
-         * Known values: `video`, `audio`, `image`, `storyboard`, `gif`, `metadata`.
+         * Known values: `video`, `audio`, `image`, `storyboard`, `gif`, `metadata`, `scenes`,
+         * `transcript`, `adaptive`.
          */
         public string $type,
         public string $description,

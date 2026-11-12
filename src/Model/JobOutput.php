@@ -34,6 +34,11 @@ final readonly class JobOutput implements \JsonSerializable
          * When the file was deleted; null while it can be downloaded.
          */
         public ?\DateTimeImmutable $deletedAt,
+        /**
+         * How an AI upscale output was enhanced; null for every other output. Known values: `full`,
+         * `faithful`.
+         */
+        public ?string $enhancement = null,
     ) {
     }
 
@@ -56,6 +61,7 @@ final readonly class JobOutput implements \JsonSerializable
             downloadUrl: Read::nullableString($data, 'download_url'),
             downloadUrlExpiresAt: Read::nullableDateTime($data, 'download_url_expires_at'),
             deletedAt: Read::nullableDateTime($data, 'deleted_at'),
+            enhancement: array_key_exists('enhancement', $data) ? Read::nullableString($data, 'enhancement') : null,
         );
     }
 
@@ -77,6 +83,7 @@ final readonly class JobOutput implements \JsonSerializable
             'download_url' => $this->downloadUrl,
             'download_url_expires_at' => Read::nullableFormat($this->downloadUrlExpiresAt),
             'deleted_at' => Read::nullableFormat($this->deletedAt),
+            ...($this->enhancement === null ? [] : ['enhancement' => $this->enhancement]),
         ];
     }
 }

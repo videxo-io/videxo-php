@@ -13,16 +13,21 @@ use Videxo\Types;
 /**
  * A job: what it runs, its state, and once it ended its outputs, error and usage.
  *
- * @phpstan-import-type JobSpec from Types
+ * @phpstan-import-type JobNotice from Types
+ * @phpstan-import-type JobResponseSpec from Types
+ * @phpstan-import-type JobStep from Types
  */
 final readonly class Job implements \JsonSerializable
 {
     /**
-     * @param JobSpec|null $spec
+     * @param JobResponseSpec|null $spec
      * @param array<array-key, string>|null $inputFiles
      * @param array<array-key, string>|null $outputFiles
+     * @param list<JobStep> $steps
+     * @param list<JobNotice> $notices
      * @param array<array-key, string> $metadata
      * @param list<JobOutput> $outputs
+     * @param array<string, mixed>|null $ai
      */
     public function __construct(
         /**
@@ -37,8 +42,7 @@ final readonly class Job implements \JsonSerializable
         public string $kind,
         /**
          * The per-operation endpoint that made the job (`transcode`, `thumbnails`, ...); null
-         * otherwise. Known values: `transcode`, `thumbnails`, `storyboard`, `gif`, `audio`,
-         * `concat`, `probe`.
+         * otherwise.
          */
         public ?string $operation,
         /**
@@ -86,6 +90,21 @@ final readonly class Job implements \JsonSerializable
         public \DateTimeImmutable $createdAt,
         public ?\DateTimeImmutable $startedAt,
         public ?\DateTimeImmutable $finishedAt,
+        /**
+         * What the job runs, in order; a command job has one step, `ffmpeg`.
+         */
+        public array $steps = [],
+        /**
+         * What Videxo changed in the request: each encoder effort option of a command (`-preset`,
+         * `-threads`, `-cpu-used`, ...) and each deprecated `video.encoder_preset`, replaced by the
+         * speed tier's settings. Empty when nothing was replaced.
+         */
+        public array $notices = [],
+        /**
+         * An AI job's clip once its input is read: the seconds billed, the credits a success costs
+         * before the data used, and the expected wait. Null before then, and for every other job.
+         */
+        public ?array $ai = null,
     ) {
     }
 
@@ -97,8 +116,12 @@ final readonly class Job implements \JsonSerializable
      */
     public static function fromArray(array $data): self
     {
-        /** @var JobSpec|null $spec */
+        /** @var JobResponseSpec|null $spec */
         $spec = Read::nullableShape($data, 'spec');
+        /** @var list<JobStep> $steps */
+        $steps = array_key_exists('steps', $data) ? Read::list($data, 'steps', static fn (array $item): array => $item) : [];
+        /** @var list<JobNotice> $notices */
+        $notices = array_key_exists('notices', $data) ? Read::list($data, 'notices', static fn (array $item): array => $item) : [];
         return new self(
             id: Read::string($data, 'id'),
             state: JobState::tryFrom(Read::string($data, 'state')) ?? JobState::Unknown,
@@ -109,11 +132,14 @@ final readonly class Job implements \JsonSerializable
             inputFiles: Read::nullableStringMap($data, 'input_files'),
             outputFiles: Read::nullableStringMap($data, 'output_files'),
             ffmpegCommand: Read::nullableString($data, 'ffmpeg_command'),
+            steps: $steps,
+            notices: $notices,
             webhookUrl: Read::nullableString($data, 'webhook_url'),
             metadata: Read::stringMap($data, 'metadata'),
             progress: Read::nullableFloat($data, 'progress'),
             error: Read::nullableModel($data, 'error', JobError::fromArray(...)),
             outputs: Read::list($data, 'outputs', JobOutput::fromArray(...)),
+            ai: array_key_exists('ai', $data) ? Read::nullableObject($data, 'ai') : null,
             usage: Read::nullableModel($data, 'usage', JobUsage::fromArray(...)),
             createdAt: Read::dateTime($data, 'created_at'),
             startedAt: Read::nullableDateTime($data, 'started_at'),
@@ -133,16 +159,19 @@ final readonly class Job implements \JsonSerializable
             'state' => $this->state,
             'kind' => $this->kind,
             'operation' => $this->operation,
-            'spec' => $this->spec === null ? null : BodyShape::apply('JobSpec', $this->spec),
+            'spec' => $this->spec === null ? null : BodyShape::apply('JobResponseSpec', $this->spec),
             'command' => $this->command,
             'input_files' => $this->inputFiles === null ? null : (object) $this->inputFiles,
             'output_files' => $this->outputFiles === null ? null : (object) $this->outputFiles,
             'ffmpeg_command' => $this->ffmpegCommand,
+            'steps' => array_map(static fn (array $item): array|object => BodyShape::apply('JobStep', $item), $this->steps),
+            'notices' => array_map(static fn (array $item): array|object => BodyShape::apply('JobNotice', $item), $this->notices),
             'webhook_url' => $this->webhookUrl,
             'metadata' => (object) $this->metadata,
             'progress' => $this->progress,
             'error' => $this->error,
             'outputs' => $this->outputs,
+            ...($this->ai === null ? [] : ['ai' => $this->ai]),
             'usage' => $this->usage,
             'created_at' => Read::format($this->createdAt),
             'started_at' => Read::nullableFormat($this->startedAt),

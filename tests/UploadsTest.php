@@ -79,4 +79,25 @@ final class UploadsTest extends TestCase
         $this->expectException(ConflictException::class);
         $this->videxo->uploads->send($upload->uploadUrl, 'abc');
     }
+    public function testSingleUploadHelperRefusesMultipartBeforeSendingBytes(): void
+    {
+        $upload = $this->videxo->uploads->create('large.mp4', 104857601);
+        $data = $upload->jsonSerialize();
+        $data['multipart'] = [
+            'part_size_bytes' => 10485760,
+            'part_count' => 11,
+            'part_url_template' => $upload->uploadUrl . '/parts/{part_number}',
+            'complete_url' => $upload->uploadUrl . '/complete',
+        ];
+        $this->api->queue = [FakeApi::json(201, $data)];
+        try {
+            $this->videxo->uploads->upload('bytes', 'large.mp4');
+            self::fail('single upload helper accepted a multipart upload');
+        } catch (\InvalidArgumentException $error) {
+            self::assertStringContainsString('Multipart', $error->getMessage());
+            self::assertCount(2, $this->api->requests);
+            self::assertSame('POST', $this->api->request()['method']);
+        }
+    }
+
 }

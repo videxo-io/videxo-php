@@ -75,12 +75,14 @@ final class JobsTest extends TestCase
             'input' => 'https://example.com/a.mp4',
             'metadata' => [],
             'resize' => [],
+            'audio' => [],
             'text' => [],
             'video' => ['codec' => 'h264'],
         ]);
         $body = $this->api->request()['body'];
         self::assertStringContainsString('"metadata":{}', $body);
         self::assertStringContainsString('"resize":{}', $body);
+        self::assertStringContainsString('"audio":{}', $body);
         self::assertStringContainsString('"text":[]', $body);
         self::assertStringContainsString('"video":{"codec":"h264"}', $body);
 

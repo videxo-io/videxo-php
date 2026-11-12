@@ -50,8 +50,8 @@ final readonly class CommandProblem implements \JsonSerializable
         return [
             'code' => $this->code,
             'message' => $this->message,
-            'option' => $this->option,
-            'filter' => $this->filter,
+            ...($this->option === null ? [] : ['option' => $this->option]),
+            ...($this->filter === null ? [] : ['filter' => $this->filter]),
         ];
     }
 }

@@ -37,7 +37,7 @@ use Videxo\Resource\Uploads;
  */
 final class Videxo
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.1.1';
 
     public const DEFAULT_BASE_URL = 'https://api.videxo.io';
 

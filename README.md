@@ -145,6 +145,12 @@ A request is retried after `429`, `502`, `503`, `504`, a network error or a time
 60 seconds or less. Other answers are not retried. `POST /v1/uploads` takes no idempotency key, so
 it is retried only after a `429`; bytes sent to an upload URL are never sent twice.
 
+The PHP upload helpers request single uploads only; `uploads->create()` has no multipart option.
+For a multipart transfer, use your HTTP client to send `POST /v1/uploads` with `"multipart": true`,
+`filename`, `size_bytes` and `content_type`. Send the parts using the response's `multipart` URLs,
+then call its completion URL. `upload()` and `uploadFile()` refuse a multipart response before
+sending any bytes.
+
 ## Your own HTTP client
 
 Pass any PSR-18 client and PSR-17 factories:
@@ -156,6 +162,13 @@ $videxo = new Videxo($key, httpClient: $client, requestFactory: $factory, stream
 The client must not follow redirects (the download link is read from a redirect) and must not throw
 for error statuses; Guzzle's PSR-18 `sendRequest()` behaves this way. The `timeout` option applies
 to the default client only.
+
+`jobs->wait()` includes retry delays and HTTP attempts in its timeout. The default Guzzle client
+and the Laravel adapter shorten each attempt to the remaining budget. A late response is never
+accepted. A custom PSR-18 client's active request cannot be interrupted through PSR-18 alone;
+implement `Videxo\TimeoutClientInterface::sendRequestWithTimeout($request, $timeout)` to apply the
+remaining budget to its connection and total request timeouts. A plain custom client must set its
+own request timeout. Both values must be finite and nonnegative. A zero timeout sends no request.
 
 ## License
 

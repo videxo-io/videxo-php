@@ -49,6 +49,9 @@ final class Uploads
         }
         $contentType ??= 'application/octet-stream';
         $upload = $this->create($filename, $size, $contentType);
+        if ($upload->multipart !== null) {
+            throw new \InvalidArgumentException('Multipart uploads need separate part requests; upload() and uploadFile() support single uploads only.');
+        }
         return $this->send($upload->uploadUrl, $stream, $contentType);
     }
 

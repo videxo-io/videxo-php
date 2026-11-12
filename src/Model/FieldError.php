@@ -59,9 +59,9 @@ final readonly class FieldError implements \JsonSerializable
     {
         return [
             'detail' => $this->detail,
-            'pointer' => $this->pointer,
-            'parameter' => $this->parameter,
-            'header' => $this->header,
+            ...($this->pointer === null ? [] : ['pointer' => $this->pointer]),
+            ...($this->parameter === null ? [] : ['parameter' => $this->parameter]),
+            ...($this->header === null ? [] : ['header' => $this->header]),
         ];
     }
 }

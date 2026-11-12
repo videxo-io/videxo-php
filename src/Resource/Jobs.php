@@ -7,6 +7,7 @@ namespace Videxo\Resource;
 use Videxo\Exception\ApiException;
 use Videxo\Exception\WaitTimeoutException;
 use Videxo\Internal\BodyShape;
+use Videxo\Internal\DeadlineExceeded;
 use Videxo\Internal\Transport;
 use Videxo\Model\CompileResult;
 use Videxo\Model\Job;
@@ -141,16 +142,29 @@ final class Jobs
      */
     public function wait(string $id, float $timeout = self::DEFAULT_WAIT_TIMEOUT, float $interval = self::DEFAULT_WAIT_INTERVAL): Job
     {
+        if (!is_finite($timeout) || $timeout < 0 || !is_finite($interval) || $interval < 0) {
+            throw new \InvalidArgumentException('wait() needs finite nonnegative timeout and interval values.');
+        }
         $clock = $this->transport->clock;
         $deadline = $clock->now() + $timeout;
         $job = null;
         for (;;) {
+            if ($clock->now() >= $deadline) {
+                throw new WaitTimeoutException("Job {$id} did not end within {$timeout} seconds.", $job);
+            }
             $pause = $interval;
             try {
-                $job = $this->get($id);
+                $job = Job::fromArray($this->transport->json(
+                    $this->transport->apiRequest('GET', self::path($id)), 'safe', $deadline,
+                ));
+                if ($clock->now() >= $deadline) {
+                    throw new DeadlineExceeded();
+                }
                 if ($job->state->isFinal()) {
                     return $job;
                 }
+            } catch (DeadlineExceeded) {
+                throw new WaitTimeoutException("Job {$id} did not end within {$timeout} seconds.", $job);
             } catch (ApiException $error) {
                 if ($error->status !== 429) {
                     throw $error;
