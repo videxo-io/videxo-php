@@ -129,6 +129,66 @@ final class ModelsTest extends TestCase
         self::assertSame($job->createdAt, $old->createdAt);
     }
 
+    public function testKeepsTheExistingOptionalConstructorPositions(): void
+    {
+        $job = Job::fromArray($this->api->fixture('jobs.succeeded'));
+        $notices = [['code' => 'option_replaced', 'option' => '-preset', 'value' => 'fast', 'tier' => 'standard']];
+        $ai = ['seconds' => 12];
+        $arguments = [$job->id, $job->state, $job->kind, $job->operation, $job->spec, $job->command,
+            $job->inputFiles, $job->outputFiles, $job->ffmpegCommand, $job->webhookUrl, $job->metadata,
+            $job->progress, $job->error, $job->outputs, $job->usage, $job->createdAt, $job->startedAt, $job->finishedAt,
+            $job->steps, $notices, $ai];
+        $old = new Job(...$arguments);
+        self::assertSame($job->steps, $old->steps);
+        self::assertSame($notices, $old->notices);
+        self::assertSame($ai, $old->ai);
+        self::assertNull($old->waitingReason);
+
+        $waiting = new Job(...[...$arguments, 'credits']);
+        self::assertSame('credits', $waiting->waitingReason);
+        self::assertSame($ai, $waiting->ai);
+    }
+
+    public function testNamedConstructionMayOmitTheCreditWaitingReason(): void
+    {
+        $job = Job::fromArray($this->api->fixture('jobs.succeeded'));
+        $old = new Job(
+            id: $job->id, state: $job->state, kind: $job->kind, operation: $job->operation,
+            spec: $job->spec, command: $job->command, inputFiles: $job->inputFiles, outputFiles: $job->outputFiles,
+            ffmpegCommand: $job->ffmpegCommand, webhookUrl: $job->webhookUrl, metadata: $job->metadata,
+            progress: $job->progress, error: $job->error, outputs: $job->outputs, usage: $job->usage,
+            createdAt: $job->createdAt, startedAt: $job->startedAt, finishedAt: $job->finishedAt,
+            steps: $job->steps, notices: $job->notices, ai: $job->ai,
+        );
+        self::assertNull($old->waitingReason);
+        self::assertSame($job->createdAt, $old->createdAt);
+        self::assertSame($job->steps, $old->steps);
+
+        $waiting = new Job(
+            id: $job->id, state: $job->state, kind: $job->kind, operation: $job->operation,
+            spec: $job->spec, command: $job->command, inputFiles: $job->inputFiles, outputFiles: $job->outputFiles,
+            ffmpegCommand: $job->ffmpegCommand, webhookUrl: $job->webhookUrl, metadata: $job->metadata,
+            progress: $job->progress, error: $job->error, outputs: $job->outputs, usage: $job->usage,
+            createdAt: $job->createdAt, startedAt: $job->startedAt, finishedAt: $job->finishedAt,
+            steps: $job->steps, notices: $job->notices, ai: $job->ai,
+            waitingReason: 'credits',
+        );
+        self::assertSame('credits', $waiting->waitingReason);
+        self::assertSame('credits', $waiting->jsonSerialize()['waiting_reason']);
+        self::assertSame('credits', Job::fromArray(self::decode((string) json_encode($waiting)))->waitingReason);
+    }
+
+    public function testReadsAnErasedJob(): void
+    {
+        $fixture = $this->api->fixture('jobs.succeeded');
+        self::assertNull(Job::fromArray($fixture)->contentErasedAt);
+        self::assertArrayNotHasKey('content_erased_at', Job::fromArray($fixture)->jsonSerialize());
+        $fixture['content_erased_at'] = '2027-11-24T10:00:00.000Z';
+        $erased = Job::fromArray($fixture);
+        self::assertSame('2027-11-24T10:00:00+00:00', $erased->contentErasedAt?->format(DATE_ATOM));
+        self::assertArrayHasKey('content_erased_at', $erased->jsonSerialize());
+    }
+
     public function testReadsFractionalCreditUsage(): void
     {
         $fixture = $this->api->fixture('jobs.succeeded');

@@ -36,6 +36,10 @@ final class Jobs
         '/v1/gif' => 'GifRequest',
         '/v1/audio' => 'AudioRequest',
         '/v1/concat' => 'ConcatRequest',
+        '/v1/adaptive' => 'AdaptiveRequest',
+        '/v1/detect_silence' => 'DetectSilenceRequest',
+        '/v1/remove_silence' => 'RemoveSilenceRequest',
+        '/v1/tts' => 'TtsRequest',
     ];
 
     /** @internal */
@@ -185,8 +189,12 @@ final class Jobs
         return '/v1/jobs/' . rawurlencode($id);
     }
 
-    /** A random UUID (version 4). */
-    private static function randomKey(): string
+    /**
+     * A random UUID (version 4).
+     *
+     * @internal
+     */
+    public static function randomKey(): string
     {
         $bytes = random_bytes(16);
         $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);

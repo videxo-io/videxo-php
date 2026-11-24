@@ -17,6 +17,7 @@ use Videxo\Resource\Jobs;
 use Videxo\Resource\Outputs;
 use Videxo\Resource\Presets;
 use Videxo\Resource\Uploads;
+use Videxo\Resource\Voices;
 
 /**
  * The Videxo API client. One instance per API key; it holds no connection and is cheap to create.
@@ -34,10 +35,14 @@ use Videxo\Resource\Uploads;
  * @phpstan-import-type GifRequest from Types
  * @phpstan-import-type AudioRequest from Types
  * @phpstan-import-type ConcatRequest from Types
+ * @phpstan-import-type AdaptiveRequest from Types
+ * @phpstan-import-type DetectSilenceRequest from Types
+ * @phpstan-import-type RemoveSilenceRequest from Types
+ * @phpstan-import-type TtsRequest from Types
  */
 final class Videxo
 {
-    public const VERSION = '0.1.1';
+    public const VERSION = '0.2.0';
 
     public const DEFAULT_BASE_URL = 'https://api.videxo.io';
 
@@ -56,6 +61,8 @@ final class Videxo
     public readonly Presets $presets;
 
     public readonly Fonts $fonts;
+
+    public readonly Voices $voices;
 
     private readonly Transport $transport;
 
@@ -102,6 +109,7 @@ final class Videxo
         $this->outputs = new Outputs($this->transport, $this->jobs);
         $this->presets = new Presets($this->transport);
         $this->fonts = new Fonts($this->transport);
+        $this->voices = new Voices($this->transport);
     }
 
     /**
@@ -141,6 +149,11 @@ final class Videxo
     public function fonts(): Fonts
     {
         return $this->fonts;
+    }
+
+    public function voices(): Voices
+    {
+        return $this->voices;
     }
 
     /**
@@ -202,5 +215,46 @@ final class Videxo
     public function concat(array $body, ?string $idempotencyKey = null): Job
     {
         return $this->jobs->createAt('/v1/concat', $body, $idempotencyKey);
+    }
+
+    /**
+     * `POST /v1/adaptive`: HLS and DASH manifests with CMAF segments, in one ZIP for you to host.
+     *
+     * @param AdaptiveRequest $body
+     */
+    public function adaptive(array $body, ?string $idempotencyKey = null): Job
+    {
+        return $this->jobs->createAt('/v1/adaptive', $body, $idempotencyKey);
+    }
+
+    /**
+     * `POST /v1/detect_silence`: the quiet ranges of `input` by amplitude, as JSON; it does not classify speech.
+     *
+     * @param DetectSilenceRequest $body
+     */
+    public function detectSilence(array $body, ?string $idempotencyKey = null): Job
+    {
+        return $this->jobs->createAt('/v1/detect_silence', $body, $idempotencyKey);
+    }
+
+    /**
+     * `POST /v1/remove_silence`: `input` with the interiors of its quiet ranges removed, keeping padding beside the sound.
+     *
+     * @param RemoveSilenceRequest $body
+     */
+    public function removeSilence(array $body, ?string $idempotencyKey = null): Job
+    {
+        return $this->jobs->createAt('/v1/remove_silence', $body, $idempotencyKey);
+    }
+
+    /**
+     * `POST /v1/tts`: `text` spoken in `locale` as a WAV file, by the language's default voice or,
+     * with `voice_id`, a ready private voice of the account (`voices`).
+     *
+     * @param TtsRequest $body
+     */
+    public function tts(array $body, ?string $idempotencyKey = null): Job
+    {
+        return $this->jobs->createAt('/v1/tts', $body, $idempotencyKey);
     }
 }

@@ -96,8 +96,8 @@ final readonly class Job implements \JsonSerializable
         public array $steps = [],
         /**
          * What Videxo changed in the request: each encoder effort option of a command (`-preset`,
-         * `-threads`, `-cpu-used`, ...) and each deprecated `video.encoder_preset`, replaced by the
-         * speed tier's settings. Empty when nothing was replaced.
+         * `-threads`, `-cpu-used`, ...), replaced by the speed tier's settings. Empty when nothing
+         * was replaced.
          */
         public array $notices = [],
         /**
@@ -105,6 +105,18 @@ final readonly class Job implements \JsonSerializable
          * before the data used, and the expected wait. Null before then, and for every other job.
          */
         public ?array $ai = null,
+        /**
+         * Why an active job is waiting, when known. Null or absent otherwise. Does not change
+         * state, holds or billing. Known values: `credits`.
+         */
+        public ?string $waitingReason = null,
+        /**
+         * When the job's content was erased, 12 months after it was created. Present only then:
+         * `spec`, `command`, `input_files`, `output_files`, `ffmpeg_command` and `webhook_url` are
+         * null, `steps`, `notices` and `outputs` empty, `metadata` empty, and `error` has no log
+         * tail. The id, state, times and usage stay.
+         */
+        public ?\DateTimeImmutable $contentErasedAt = null,
     ) {
     }
 
@@ -125,6 +137,7 @@ final readonly class Job implements \JsonSerializable
         return new self(
             id: Read::string($data, 'id'),
             state: JobState::tryFrom(Read::string($data, 'state')) ?? JobState::Unknown,
+            waitingReason: array_key_exists('waiting_reason', $data) ? Read::nullableString($data, 'waiting_reason') : null,
             kind: Read::string($data, 'kind'),
             operation: Read::nullableString($data, 'operation'),
             spec: $spec,
@@ -141,6 +154,7 @@ final readonly class Job implements \JsonSerializable
             outputs: Read::list($data, 'outputs', JobOutput::fromArray(...)),
             ai: array_key_exists('ai', $data) ? Read::nullableObject($data, 'ai') : null,
             usage: Read::nullableModel($data, 'usage', JobUsage::fromArray(...)),
+            contentErasedAt: array_key_exists('content_erased_at', $data) ? Read::nullableDateTime($data, 'content_erased_at') : null,
             createdAt: Read::dateTime($data, 'created_at'),
             startedAt: Read::nullableDateTime($data, 'started_at'),
             finishedAt: Read::nullableDateTime($data, 'finished_at'),
@@ -157,6 +171,7 @@ final readonly class Job implements \JsonSerializable
         return [
             'id' => $this->id,
             'state' => $this->state,
+            ...($this->waitingReason === null ? [] : ['waiting_reason' => $this->waitingReason]),
             'kind' => $this->kind,
             'operation' => $this->operation,
             'spec' => $this->spec === null ? null : BodyShape::apply('JobResponseSpec', $this->spec),
@@ -173,6 +188,7 @@ final readonly class Job implements \JsonSerializable
             'outputs' => $this->outputs,
             ...($this->ai === null ? [] : ['ai' => $this->ai]),
             'usage' => $this->usage,
+            ...($this->contentErasedAt === null ? [] : ['content_erased_at' => Read::nullableFormat($this->contentErasedAt)]),
             'created_at' => Read::format($this->createdAt),
             'started_at' => Read::nullableFormat($this->startedAt),
             'finished_at' => Read::nullableFormat($this->finishedAt),

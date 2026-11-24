@@ -21,6 +21,24 @@ namespace Videxo;
  *     max_resolution?: '720p'|'1080p',
  *     type: 'adaptive'
  * }
+ * @phpstan-type AdaptiveRequest array{
+ *     input: string|array{
+ *         url: string
+ *     }|array{
+ *         upload_id: string
+ *     },
+ *     extra_inputs?: array<array-key, string|array{
+ *         url: string
+ *     }|array{
+ *         upload_id: string
+ *     }>,
+ *     webhook_url?: string|null,
+ *     metadata?: array<array-key, string>,
+ *     filename?: string,
+ *     format?: 'zip',
+ *     manifests?: 'hls'|'dash'|'both',
+ *     max_resolution?: '720p'|'1080p'
+ * }
  * @phpstan-type AiUpscaleJobRequest array{
  *     inputs: array<array-key, string|array{
  *         url: string
@@ -257,7 +275,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -391,7 +408,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -525,7 +541,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -659,7 +674,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -793,7 +807,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -927,7 +940,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1072,7 +1084,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1232,7 +1243,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1366,7 +1376,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1500,7 +1509,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1758,7 +1766,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1884,7 +1891,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -1923,6 +1929,19 @@ namespace Videxo;
  *     output_files: array<array-key, string>,
  *     command: string,
  *     speed?: 'fast'|'standard'|'slow',
+ *     webhook_url?: string|null,
+ *     metadata?: array<array-key, string>
+ * }
+ * @phpstan-type DetectSilenceRequest array{
+ *     input: string|array{
+ *         url: string
+ *     }|array{
+ *         upload_id: string
+ *     },
+ *     filename?: string,
+ *     thresholdDb?: int|float,
+ *     minSilenceSeconds?: int|float,
+ *     speechPaddingSeconds?: int|float,
  *     webhook_url?: string|null,
  *     metadata?: array<array-key, string>
  * }
@@ -2153,7 +2172,10 @@ namespace Videxo;
  *     tier: 'fast'|'standard'|'slow'
  * }
  * @phpstan-type JobRequest CreateJobRequest|OperationsJobRequest|AiUpscaleJobRequest
- * @phpstan-type JobResponseSpec JobSpec|AiUpscaleJobSpec
+ * @phpstan-type JobResponseSpec JobSpec|AiUpscaleJobSpec|array{
+ *     locale: 'pl'|'en',
+ *     voice_id?: string
+ * }
  * @phpstan-type JobSpec array{
  *     inputs: array<array-key, array{
  *         url: string
@@ -2462,7 +2484,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -2600,7 +2621,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -2633,6 +2653,32 @@ namespace Videxo;
  *     strip_metadata?: bool,
  *     preset: 'web-720p'|'web-1080p'|'social-vertical'|'square'
  * }
+ * @phpstan-type PrivateVoiceCreate array{
+ *     locale: 'pl'|'en',
+ *     authorization: array{
+ *         authorized: true,
+ *         statement_version: 'voice-use-v1'
+ *     },
+ *     reference: array{
+ *         sha256: string,
+ *         size_bytes: int,
+ *         content_type: 'audio/wav'
+ *     }
+ * }
+ * @phpstan-type RemoveSilenceRequest array{
+ *     input: string|array{
+ *         url: string
+ *     }|array{
+ *         upload_id: string
+ *     },
+ *     filename?: string,
+ *     thresholdDb?: int|float,
+ *     minSilenceSeconds?: int|float,
+ *     speechPaddingSeconds?: int|float,
+ *     webhook_url?: string|null,
+ *     metadata?: array<array-key, string>,
+ *     type?: 'video'|'audio'
+ * }
  * @phpstan-type ScenesOutput array{
  *     name?: string,
  *     filename?: string,
@@ -2662,7 +2708,6 @@ namespace Videxo;
  * @phpstan-type StoryboardOutput array{
  *     name?: string,
  *     filename?: string,
- *     format?: 'mp4'|'mov'|'webm'|'mkv'|'ts'|'mp3'|'m4a'|'aac'|'wav'|'flac'|'ogg'|'opus'|'jpg'|'png'|'webp'|'avif'|'gif'|'json'|'zip',
  *     input?: string,
  *     trim?: array{
  *         start?: int|float|string,
@@ -2691,7 +2736,8 @@ namespace Videxo;
  *     quality?: 'low'|'medium'|'high',
  *     exact_times?: bool,
  *     strip_metadata?: bool,
- *     type: 'storyboard'
+ *     type: 'storyboard',
+ *     format?: 'jpg'|'png'
  * }
  * @phpstan-type StoryboardRequest array{
  *     input: string|array{
@@ -2707,7 +2753,6 @@ namespace Videxo;
  *     webhook_url?: string|null,
  *     metadata?: array<array-key, string>,
  *     filename?: string,
- *     format?: 'mp4'|'mov'|'webm'|'mkv'|'ts'|'mp3'|'m4a'|'aac'|'wav'|'flac'|'ogg'|'opus'|'jpg'|'png'|'webp'|'avif'|'gif'|'json'|'zip',
  *     trim?: array{
  *         start?: int|float|string,
  *         end?: int|float|string,
@@ -2734,7 +2779,8 @@ namespace Videxo;
  *     tile_width?: int,
  *     quality?: 'low'|'medium'|'high',
  *     exact_times?: bool,
- *     strip_metadata?: bool
+ *     strip_metadata?: bool,
+ *     format?: 'jpg'|'png'
  * }
  * @phpstan-type Subtitles array{
  *     input: string,
@@ -2943,7 +2989,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool
@@ -2992,6 +3037,13 @@ namespace Videxo;
  * @phpstan-type Transition array{
  *     type: 'fade'|'fade-black'|'fade-white'|'dissolve'|'wipe-left'|'wipe-right'|'wipe-up'|'wipe-down'|'slide-left'|'slide-right'|'slide-up'|'slide-down'|'circle-open'|'circle-close'|'radial'|'zoom-in'|'pixelize',
  *     duration?: int|float
+ * }
+ * @phpstan-type TtsRequest array{
+ *     text: string,
+ *     locale: 'pl'|'en',
+ *     voice_id?: string,
+ *     webhook_url?: string|null,
+ *     metadata?: array<array-key, string>
  * }
  * @phpstan-type VideoOutput array{
  *     name?: string,
@@ -3087,7 +3139,6 @@ namespace Videxo;
  *         quality?: 'low'|'medium'|'high'|'lossless',
  *         crf?: int,
  *         speed?: 'fast'|'standard'|'slow',
- *         encoder_preset?: 'ultrafast'|'superfast'|'veryfast'|'faster'|'fast'|'medium'|'slow',
  *         max_bitrate?: string,
  *         pixel_format?: 'yuv420p'|'yuv422p'|'yuv444p'|'yuv420p10le',
  *         faststart?: bool

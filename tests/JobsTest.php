@@ -37,8 +37,16 @@ final class JobsTest extends TestCase
         $this->videxo->gif(['input' => 'https://example.com/a.mp4']);
         $this->videxo->audio(['input' => 'https://example.com/a.mp4']);
         $this->videxo->concat(['inputs' => ['https://example.com/a.mp4', 'https://example.com/b.mp4']]);
+        $this->videxo->adaptive(['input' => 'https://example.com/a.mp4', 'manifests' => 'both']);
+        $this->videxo->detectSilence(['input' => 'https://example.com/a.mp4']);
+        $this->videxo->removeSilence(['input' => 'https://example.com/a.mp4', 'thresholdDb' => -40]);
+        $this->videxo->tts(['text' => 'Hello.', 'locale' => 'en']);
         $paths = array_map(static fn (array $request) => parse_url($request['url'], PHP_URL_PATH), $this->api->requests);
-        self::assertSame(['/v1/thumbnails', '/v1/storyboard', '/v1/gif', '/v1/audio', '/v1/concat'], $paths);
+        self::assertSame(
+            ['/v1/thumbnails', '/v1/storyboard', '/v1/gif', '/v1/audio', '/v1/concat', '/v1/adaptive', '/v1/detect_silence', '/v1/remove_silence', '/v1/tts'],
+            $paths,
+        );
+        self::assertSame(['text' => 'Hello.', 'locale' => 'en'], self::decode($this->api->request()['body']));
     }
 
     public function testYourIdempotencyKeyReturnsTheSameJob(): void

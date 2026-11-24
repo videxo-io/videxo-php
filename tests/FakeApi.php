@@ -168,7 +168,7 @@ final class FakeApi implements ClientInterface
         if ($method === 'POST' && $path === '/v1/uploads' && is_array($body)) {
             return $this->createUpload($body);
         }
-        if ($method === 'POST' && preg_match('~^/v1/(jobs|transcode|thumbnails|storyboard|gif|audio|concat)$~', $path, $match) === 1) {
+        if ($method === 'POST' && preg_match('~^/v1/(jobs|transcode|thumbnails|storyboard|gif|audio|concat|adaptive|detect_silence|remove_silence|tts)$~', $path, $match) === 1) {
             return $this->createJob($match[1], is_array($body) ? $body : [], $request->getHeaderLine('Idempotency-Key'), $content);
         }
         if ($method === 'POST' && $path === '/v1/jobs/compile') {

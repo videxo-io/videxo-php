@@ -40,7 +40,11 @@ if ($done->state === JobState::Succeeded) {
 | Call | API |
 |---|---|
 | `new Videxo($apiKey, baseUrl:, httpClient:, maxRetries:, timeout:)` | `baseUrl` is `https://api.videxo.io` by default |
-| `transcode`, `thumbnails`, `storyboard`, `gif`, `audio`, `concat` | `POST /v1/<operation>` |
+| `transcode`, `thumbnails`, `storyboard`, `gif`, `audio`, `concat`, `adaptive` | `POST /v1/<operation>` |
+| `detectSilence`, `removeSilence` | `POST /v1/detect_silence`, `POST /v1/remove_silence` |
+| `tts($body)` | `POST /v1/tts`: text spoken as a WAV file, by a default or a private voice |
+| `voices->create($body)`, `voices->uploadReference($id, $wav)` | `POST /v1/voices`, then `PUT /v1/voices/{id}/reference` with the WAV bytes |
+| `voices->get($id)`, `voices->list(limit:)`, `voices->page(limit:, cursor:)`, `voices->delete($id)` | `GET /v1/voices/{id}`, `GET /v1/voices`, `DELETE /v1/voices/{id}` |
 | `jobs->create($body, $idempotencyKey)` | `POST /v1/jobs`, a command body or an operations body |
 | `jobs->get($id)`, `jobs->cancel($id)`, `jobs->deleteFiles($id)` | `GET /v1/jobs/{id}`, `POST .../cancel`, `DELETE .../files` |
 | `jobs->list(limit:, state:)`, `jobs->page(limit:, state:, cursor:)` | `GET /v1/jobs`: every job as a generator, or one page |

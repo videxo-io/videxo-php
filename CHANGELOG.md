@@ -1,6 +1,19 @@
 # Changelog
 
-## 0.1.1 (2026-11-12)
+## 0.2.0
+
+The first release after 0.1.0. It carries the fixes made for a 0.1.1 that was never tagged.
+
+- `tts()` for `POST /v1/tts`: text spoken in `locale` as a WAV file, by the language's default voice
+  or a ready private voice (`voice_id`). PHPStan type `TtsRequest`.
+- `voices` for the private voices of the account: `create` (a voice declared from a short WAV
+  recording, its SHA-256 and size, with the voice-use statement), `uploadReference` (the recording's
+  bytes; the voice is then `ready`), `get`, `page`, `list` and `delete`. Models `PrivateVoice` and
+  `PrivateVoiceList`, PHPStan type `PrivateVoiceCreate`.
+- `adaptive()`, `detectSilence()` and `removeSilence()` for `POST /v1/adaptive`,
+  `POST /v1/detect_silence` and `POST /v1/remove_silence`, with their PHPStan types.
+
+### Fixes since 0.1.0
 
 - Bound job polling retries and HTTP attempts by the wait deadline, reject late responses, and
   preserve the last job when waiting expires. Custom clients can implement `TimeoutClientInterface`.
